@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+		<meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>BTST-STBT Scanner</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+	</head>
+<body>
+    <nav id="top-nav" class="navbar navbar-expand-lg navbar-light" style="background-color: #e3f2fd;">
+        <div class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Select a Scanner
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+              <li><a class="dropdown-item" href="/">Relative Strength</a></li>
+              <li><a class="dropdown-item active" href="#">BTST-STBT</a></li>
+            </ul>
+        </div>
+    </nav>
+    <form id='form'>
+        <label for="input_date" class="form-label">Input Date:</label>
+        <input type="date" name="input_date" min="2021-01-01" max="2021-06-16" placeholder="yyyy-mm-dd" required/>
+        <label for="cutoff_time" class="form-label">Input Time:</label>
+        <input type="time" name="cutoff_time" min="09:15" max="15:29" placeholder="hh:mm" required/>
+        <button type="submit" id='pingBtn' class="btn btn-secondary">Ping</button>
+        <input type="submit" id='submitBtn' class="btn btn-secondary">
+    </form>
+    <nav>
+        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+          <button class="nav-link active" id="full_list-tab" data-bs-toggle="tab" data-bs-target="#full_list" type="button" role="tab" aria-controls="full_list" aria-selected="true">Full List</button>
+          <button class="nav-link" id="btst_list-tab" data-bs-toggle="tab" data-bs-target="#btst_list" type="button" role="tab" aria-controls="btst_list" aria-selected="false">BTST</button>
+          <button class="nav-link" id="stbt_list-tab" data-bs-toggle="tab" data-bs-target="#stbt_list" type="button" role="tab" aria-controls="stbt_list" aria-selected="false">STBT</button>
+          <button class="nav-link" id="manual_btst-tab" data-bs-toggle="tab" data-bs-target="#manual_btst_list" type="button" role="tab" aria-controls="manual_btst_list" aria-selected="false">Manual BTST</button>
+          <button class="nav-link" id="manual_stbt-tab" data-bs-toggle="tab" data-bs-target="#manual_stbt_list" type="button" role="tab" aria-controls="manual_stbt_list" aria-selected="false">Manual STBT</button>
+        </div>
+        <p id="time"></p> 
+      </nav>
+      <div class="tab-content" id="nav-tabContent">
+        <div class="tab-pane fade show active" id="full_list" role="tabpanel" aria-labelledby="full_list-tab">
+            <table id="fullList"></table>
+        </div>
+        <div class="tab-pane fade" id="btst_list" role="tabpanel" aria-labelledby="btst_list-tab">
+            <table id="btst"></table>
+        </div>
+        <div class="tab-pane fade" id="stbt_list" role="tabpanel" aria-labelledby="stbt_list-tab">
+            <table id="stbt"></table>
+        </div>
+        <div class="tab-pane fade" id="manual_btst_list" role="tabpanel" aria-labelledby="manual_btst-tab">
+            <table id="manual_btst"></table>
+        </div>
+        <div class="tab-pane fade" id="manual_stbt_list" role="tabpanel" aria-labelledby="manual_stbt-tab">
+            <table id="manual_stbt"></table>
+        </div>
+      </div>
+
+      <script>
+        const form = document.getElementById("form");
+			form.addEventListener('submit', (event)=>{
+				let fields = {}
+				event.preventDefault();
+				let form = event.target
+				for (input of form) {
+					const { type,name,value } = input;
+					if (type !== "submit") {
+						fields[name] = value
+					}
+				} 
+                fetch("/api/btst",{
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }, 
+                    body: JSON.stringify(fields),
+                }).then(response => response.json())
+                .then(data => {
+                    let x = JSON.parse(data)
+                    
+                    const fullList = document.getElementById('fullList');
+                    const btst = document.getElementById('btst');
+                    const stbt = document.getElementById('stbt');
+                    const manual_btst = document.getElementById('manual_btst');
+                    const manual_stbt = document.getElementById('manual_stbt');
+
+                    const colHeaders = "<tr><th>id</th><th>name</th><th>cutoff_close</th><th>atr_val</th><th>atr_flag_btst</th><th>atr_flag_stbt</th><th>pc_100_coff</th><th>oic_yest_coff</th><th>vc_tdy_10day</th><th>candle_80_type</th><th>candle_80_val</th><th>stock_st</th><th>abv_st</th></tr>"
+
+                    fullList.innerHTML = colHeaders;
+                    btst.innerHTML = colHeaders;
+                    stbt.innerHTML = colHeaders;
+                    manual_btst.innerHTML = colHeaders;
+                    manual_stbt.innerHTML = colHeaders;
+                    
+                    for (row of x.full_list){
+                        
+                        cellColor(fullList,row)
+                    }
+                    
+                    for (row of x.btst){
+                        
+                        cellColor(btst,row)
+                    }
+
+                    for (row of x.stbt){
+                        
+                        cellColor(stbt,row)
+                    }
+                
+                    for (row of x.manual_btst){
+                        
+                        cellColor(manual_btst,row)
+                    }
+                
+                    for (row of x.manual_stbt){
+                        
+                        cellColor(manual_stbt,row)
+                    }
+                    
+                });
+            });
+
+            const cellColor=(table,row)=>{
+                let colorClass1 = '';
+                let colorClass2 = '';
+                let colorClass3 = '';
+                let colorClass4 = '';
+
+                if (row.atr_flag_btst=='True'){
+                    colorClass1='green';
+                }
+                if (row.atr_flag_stbt=='True'){
+                    colorClass2='green';
+                }
+                if (row.candle_80_type=='Green'){
+                    colorClass3='green';
+                } else if (row.candle_80_type=='Red'){
+                    colorClass3='red';
+                }
+                if (row.abv_st=='Yes'){
+                    colorClass4='green';
+                }
+
+                table.innerHTML += `<tr><td>${row.id}</td><td>${row.name}</td><td>${row.cutoff_close}</td><td>${row.atr_val}</td><td class=${colorClass1}>${row.atr_flag_btst}</td><td class=${colorClass2}>${row.atr_flag_stbt}</td><td>${row.pc_100_coff}</td><td>${row.oic_yest_coff}</td><td>${row.vc_tdy_10day}</td><td class=${colorClass3}>${row.candle_80_type}</td><td>${row.candle_80_val}</td><td>${row.stock_st}</td><td class=${colorClass4}>${row.abv_st}</td></tr>`
+
+            }
+
+            // const pingBtn = document.getElementById("pingBtn");
+            // pingBtn.addEventListener('submit', (event)=>{
+			// 	let fields = {}
+			// 	event.preventDefault();
+			// 	let form = event.target
+			// 	for (input of form) {
+			// 		const { type,name,value } = input;
+			// 		if (type !== "submit") {
+			// 			fields[name] = value
+			// 		}
+			// 	} 
+            //     fetch("/ping",{
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         }, 
+            //         body: JSON.stringify(fields),
+            //     }).then(response => response.json())
+            //     .then(data => {
+            //         let x = JSON.parse(data)
+                    
+                
+            //     });
+            // });
+            
+
+
+    </script>
+    <style>
+        .tab-content{
+            display: flex;
+            justify-content: center;
+        }
+        table, td, th{
+            text-align: center;
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        td,th{
+            padding: 5px;
+        }
+
+        nav{
+            display: flex;
+            justify-content: space-between;
+        }
+
+        p{
+            font-size: 18px;
+            font-weight: bold;
+            padding: 10px 30px;
+        }
+
+        #top-nav{
+                display: flex;
+                justify-content: center;
+        }
+
+        #form{
+            text-align: center;
+            padding: 20px;
+        }
+
+        #form label{
+            padding: 5px;
+            padding-left: 20px;
+            font-weight: bold;
+        }
+
+        #submitBtn:hover, #pingBtn:hover{
+            background-color: white;
+            color: rgb(110, 117, 124);
+            box-shadow: 2px 2px 10px rgb(165, 169, 173);
+            /* transform: translate(2px, 2px); */
+            transition: all 0.3s;
+        }
+
+        .red{
+            background-color: rgb(223, 101, 101);
+            color: white;
+        }
+
+        .green {
+            background-color: rgb(79, 187, 79);
+            color: white;
+        }
+    </style>
+</body>
+</html>
+
+

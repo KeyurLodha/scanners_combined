@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relative Strength Scanner</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+</head>
+<body>
+    <nav id="top-nav" class="navbar navbar-expand-lg navbar-light" style="background-color: #e3f2fd;">
+        <div class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Select a Scanner
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+              <li><a class="dropdown-item active" href="#">Relative Strength</a></li>
+              <li><a class="dropdown-item" href="btst">BTST-STBT</a></li>
+            </ul>
+        </div>
+    </nav>
+    <nav>
+        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+          <button class="nav-link active" id="scrips-tab" data-bs-toggle="tab" data-bs-target="#scrips" type="button" role="tab" aria-controls="scrips" aria-selected="true">Scrips</button>
+          <button class="nav-link" id="shortlist-buy-tab" data-bs-toggle="tab" data-bs-target="#shortlist-buy" type="button" role="tab" aria-controls="shortlist-buy" aria-selected="false">Shortlist Buy</button>
+          <button class="nav-link" id="shortlist-sell-tab" data-bs-toggle="tab" data-bs-target="#shortlist-sell" type="button" role="tab" aria-controls="shortlist-sell" aria-selected="false">Shortlist Sell</button>
+        </div>
+        <p id="time"></p> 
+      </nav>
+      <div class="tab-content" id="nav-tabContent">
+        <div class="tab-pane fade show active" id="scrips" role="tabpanel" aria-labelledby="scripse-tab">
+            <table id="scripsTable"></table>
+        </div>
+        <div class="tab-pane fade" id="shortlist-buy" role="tabpanel" aria-labelledby="shortlist-buy-tab">
+            <table id="shortlistBuyTable"></table>
+        </div>
+        <div class="tab-pane fade" id="shortlist-sell" role="tabpanel" aria-labelledby="shortlist-sell-tab">
+            <table id="shortlistSellTable"></table>
+        </div>
+      </div>
+
+      <script>
+          const callAPI = ()=>{
+            fetch("/api/relstrength",{
+                method: 'GET',
+                headers: {
+                      'Content-Type': 'application/json'
+                },
+            }).then(response => response.json())
+              .then(data => {
+                  let x = JSON.parse(data)
+                  const timeStr = document.getElementById('time');
+                  timeStr.innerHTML = "Time: " + x.time;
+                  
+                const scripsTable = document.getElementById('scripsTable');
+                const shortlistBuyTable = document.getElementById('shortlistBuyTable');
+                const shortlistSellTable = document.getElementById('shortlistSellTable');
+
+                const colHeaders = "<tr><th>id</th><th>name</th><th>nifty_pc</th><th>stock_pc</th><th>rs_wo_beta</th><th>high_vs_20d</th><th>high_vs_50d</th><th>high_vs_250d</th><th>low_vs_20d</th><th>low_vs_50d</th><th>low_vs_250d</th><th>LTP</th><th>vol_ratio</th></tr>"
+
+                scripsTable.innerHTML = colHeaders;
+                shortlistBuyTable.innerHTML = colHeaders;
+                shortlistSellTable.innerHTML = colHeaders;
+                
+                for (row of x.scrips){
+                	
+                    cellColor(scripsTable, row)
+                }
+                if (x.shortlist_buy.length){
+                    for (row of x.shortlist_buy){
+                        
+                        cellColor(shortlistBuyTable, row)
+                }
+            }
+                if (x.shortlist_sell.length){
+                    for (row of x.shortlist_sell){
+                        
+                        cellColor(shortlistSellTable, row)
+                }
+            }
+                }
+                );
+          }
+
+        window.addEventListener('load', (event)=>{
+            event.preventDefault();
+            const interval = 1000*60*15;
+            const mins = new Date().getMinutes();
+            callAPI();
+            if (mins%15==0){
+                setInterval(callAPI, interval)                   
+            }
+            else{
+                const diff = ((parseInt(mins/15)+1)*15) - mins
+                setTimeout(()=>{
+                    callAPI();
+                    setInterval(callAPI, interval)
+                }, diff*60*1000)
+            }
+        })
+
+        const cellColor=(table,row)=>{
+                let colorClass1 = '';
+                let colorClass2 = '';
+                let colorClass3 = '';
+                let colorClass4 = '';
+                let colorClass5 = '';
+                let colorClass6 = '';
+
+                if (row.high_vs_20d=='True'){
+                    colorClass1='green';
+                }
+                if (row.high_vs_50d=='True'){
+                    colorClass2='green';
+                }
+                if (row.high_vs_250d=='Green'){
+                    colorClass3='green';
+                }
+                if (row.low_vs_20d=='Yes'){
+                    colorClass4='green';
+                }
+                if (row.low_vs_50d=='Yes'){
+                    colorClass5='green';
+                }
+                if (row.low_vs_250d=='Yes'){
+                    colorClass6='green';
+                }
+
+                table.innerHTML += `<tr><td>${row.id}</td><td>${row.name}</td><td>${row.bchmrk_pc}</td><td>${row.stock_pc}</td><td>${row.rs_wo_beta}</td><td class=${colorClass1}>${row.high_vs_20d}</td><td class=${colorClass2}>${row.high_vs_50d}</td><td class=${colorClass3}>${row.high_vs_250d}</td><td class=${colorClass4}>${row.low_vs_20d}</td><td class=${colorClass5}>${row.low_vs_50d}</td><td class=${colorClass6}>${row.low_vs_250d}</td><td>${row.LTP}</td><td>${row.vol_ratio}</td></tr>`
+
+            }
+
+    </script>
+    <style>
+        .tab-content{
+            display: flex;
+            justify-content: center;
+        }
+        table, td, th{
+            text-align: center;
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        td,th{
+            padding: 10px;
+        }
+
+        nav{
+            display: flex;
+            justify-content: space-between;
+        }
+
+        p{
+            font-size: 18px;
+            font-weight: bold;
+            padding: 10px 30px;
+        }
+
+        #top-nav{
+            display: flex;
+            justify-content: center;
+        }
+
+        #time{
+            margin: 0;
+        }
+
+        .green {
+            background-color: rgb(79, 187, 79);
+            color: white;
+        }
+    </style>
+</body>
+</html>
+
+
