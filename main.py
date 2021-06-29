@@ -420,22 +420,34 @@ def callBTSTAPI(request: Request, args: Input):
     input_date = args.input_date
     cutoff_time = args.cutoff_time
 
-    try:
-        full_list, btst, stbt, manual_btst, manual_stbt = btst_func(
-            input_date, cutoff_time)
-        s1 = full_list.to_dict(orient="records")
-        s2 = btst.to_dict(orient="records")
-        s3 = stbt.to_dict(orient="records")
-        s4 = manual_btst.to_dict(orient="records")
-        s5 = manual_stbt.to_dict(orient="records")
-        # time_str = f'{start_time} - {end_time}'
-        rtn_data = {'full_list': s1, 'btst': s2, 'stbt': s3,
-                    'manual_btst': s4, 'manual_stbt': s5}
-        payload = json.dumps(rtn_data)
-    except KeyError as e:
+    stocks_db = cnx.connect(host="164.52.207.158", user="stock",
+                            password="stockdata@data", database='stock_production')
+    stock_query = f'select instrument_id from instrument_scan where ins_date="{input_date} {cutoff_time}";'
+    ping_df = pd.read_sql(stock_query, stocks_db)
+    stocks_db.close()
+
+    if len(ping_df) < 120:
+        print('PING FAILED')
         rtn_data = {'full_list': [], 'btst': [], 'stbt': [],
                     'manual_btst': [], 'manual_stbt': []}
         payload = json.dumps(rtn_data)
+    else:
+        print('PING PASSED')
+        try:
+            full_list, btst, stbt, manual_btst, manual_stbt = btst_func(
+                input_date, cutoff_time)
+            s1 = full_list.to_dict(orient="records")
+            s2 = btst.to_dict(orient="records")
+            s3 = stbt.to_dict(orient="records")
+            s4 = manual_btst.to_dict(orient="records")
+            s5 = manual_stbt.to_dict(orient="records")
+            rtn_data = {'full_list': s1, 'btst': s2, 'stbt': s3,
+                        'manual_btst': s4, 'manual_stbt': s5}
+            payload = json.dumps(rtn_data)
+        except KeyError as e:
+            rtn_data = {'full_list': [], 'btst': [], 'stbt': [],
+                        'manual_btst': [], 'manual_stbt': []}
+            payload = json.dumps(rtn_data)
 
     return payload
 
