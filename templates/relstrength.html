@@ -85,14 +85,14 @@
 
         window.addEventListener('load', (event)=>{
             event.preventDefault();
-            const interval = 1000*60*15;
+            const interval = 1000*60*16;
             const mins = new Date().getMinutes();
             callAPI();
             if (mins%15==0){
                 setInterval(callAPI, interval)                   
             }
             else{
-                const diff = ((parseInt(mins/15)+1)*15) - mins
+                const diff = (((parseInt(mins/15)+1)*15) - mins)+1
                 setTimeout(()=>{
                     callAPI();
                     setInterval(callAPI, interval)
